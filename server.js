@@ -6,9 +6,8 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Prosta baza danych w pamięci (zniknie po restarcie serwera)
-// Render.com restartuje serwery, więc dane będą znikać.
-// Aby tego uniknąć w przyszłości, będziesz potrzebować bazy danych (np. MongoDB Atlas).
+// Prosta baza danych w pamięci
+// Uwaga: Dane znikają po restarcie serwera na darmowym hostingu (Render.com)
 const database = {}; 
 
 // Endpoint: Sprawdź czy działa
@@ -19,14 +18,17 @@ app.get('/', (req, res) => {
 // Endpoint: Pobierz kosmetyki gracza
 app.get('/api/cosmetics/:uuid', (req, res) => {
     const uuid = req.params.uuid;
+    
+    // Jeśli gracza nie ma w bazie, zwróć domyślne ustawienia (WSZYSTKO WYŁĄCZONE)
     const data = database[uuid] || { 
         cape: "default", 
         wings: "default_wings", 
         handItem: "default_item",
-        capeEnabled: true, 
+        capeEnabled: false, // <--- ZMIANA: Domyślnie wyłączone
         wingsEnabled: false, 
         handItemEnabled: false 
     };
+    
     console.log(`[GET] Fetching for ${uuid}`);
     res.json(data);
 });
@@ -34,9 +36,11 @@ app.get('/api/cosmetics/:uuid', (req, res) => {
 // Endpoint: Zapisz kosmetyki gracza
 app.post('/api/cosmetics/:uuid', (req, res) => {
     const uuid = req.params.uuid;
-    // Walidacja prostych danych
+    
+    // Walidacja: sprawdź czy przesłano dane
     if (!req.body) return res.sendStatus(400);
     
+    // Zapisz dane do bazy
     database[uuid] = {
         cape: req.body.cape || "default",
         wings: req.body.wings || "default_wings",
